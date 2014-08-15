@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>Puzzle game</title>
+    <meta name="description" content="Puzzle test" />
+    <meta name="author" content="Oleg Zinoviev" />
+    <link href="./css/style.css?v10" rel="stylesheet" />
+</head>
+
+<body>
+
+    <div class="wrapper">
+
+        <div id="puzzle-wrap" class="puzzle-wrap">
+        </div>
+
+        <div id="puzzle-hud" class="puzzle-hud">
+            <div id="puzzle-hud-inner" class="puzzle-hud__inner">
+
+                <div class="puzzle-hud__timer">
+                    <h3>Time</h3>
+                    <div id="puzzle-hud-timer-inner" class="puzzle-hud__timer__inner"></div>
+                </div>
+
+                <div class="puzzle-hud__player">
+
+                    <div class="puzzle-hud__player__points">
+                        <h3>Points:</h3>
+                        <div id="puzzle-hud-points-inner" class="puzzle-hud__player__content"></div>
+                    </div>
+
+                    <div class="puzzle-hud__player__steps">
+                        <h3>Steps:</h3>
+                        <div id="puzzle-hud-steps-inner" class="puzzle-hud__player__content"></div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- one cell template -->
+    <script id="template-puzzle-cell-item" type="text/template">
+        <% if (isCorrect == true) {%>
+            <div class="puzzle__item__cell puzzle__item__cell--correct" data-position="<%= position %>"><%= number %></div>
+        <% } else { %>
+            <div class="puzzle__item__cell" data-position="<%= position %>"><%= number %></div>
+        <% }%>
+    </script>
+
+    <script id="template-puzzle-container" type="text/template">
+        <div class="puzzle-wrap__start">
+            <h3>15 Puzzle</h3>
+            <div id="puzzle-container" class="puzzle unselectable"></div>
+        </div>
+    </script>
+
+    <script id="template-index-page" type="text/template">
+        <div class="puzzle-wrap__index">
+            <a class="puzzle__start-link" href="#start">
+                <span>Click to start</span>
+                <img src="images/fallout_guy_approved.png" alt="#" />
+            </a>
+        </div>
+    </script>
+
+    <script id="template-timer" type="text/template">
+        <% _.each(items, function(item) { %>
+            <b class="timer-sep">:</b>
+            <div data-type="<%= item.type %>" class="timer-col">
+                <span><%= item.left %></span>
+                <span><%= item.right %></span>
+            </div>
+        <% })%>
+    </script>
+
+    <script id="template-steps" type="text/template">
+        <span><%= steps %></span>
+    </script>
+
+    <script id="template-points" type="text/template">
+        <span><%= points %></span>
+    </script>
+
+    <script id="template-ending" type="text/template">
+        <div class="puzzle-wrap__final">
+            <h3>Perfect!</h3>
+            <img src="images/final_new.gif" alt="The end! :)" />
+        </div>
+    </script>
+
+    <!-- JS -->
+    <script src="./js/jquery.js"></script>
+    <script src="./js/jquery.easing.1.3.min.js"></script>
+    <script src="./js/underscore.js"></script>
+    <script src="./js/backbone.js"></script>
+    <script src="./js/app.js?v10"></script>
+
+</body>
+</html>
