@@ -3,25 +3,32 @@
 (function() {
 
     window.App = {
+        init: function(options) {
+
+            // Start Client Logic
+            $.extend(App.Options, options);
+            App.Socket = io();
+
+            new App.Router;
+            Backbone.history.start();
+        },
         Models: {},
         Collections: {},
         Views: {},
         Router: {},
-        Config: {}, // constants
-        State: {},  //app state vars
-        Utils: {} // utils functions
-    }
+        Constants: {},
+        State: {},
+        Utils: {},
+        Socket: {},
+        Options: {}
+    };
 
-    App.Config = {
-        DEBUG: true,
+    App.Constants = {
         MAX_CELLS: 15,
         MAP_AREA: [
             { x: 0,  y: 0   }, { x: 50, y: 0   }, { x: 100, y: 0   }, { x: 150, y: 0   },
-
             { x: 0,  y: 50  }, { x: 50, y: 50  }, { x: 100, y: 50  }, { x: 150, y: 50  },
-
             { x: 0,  y: 100 }, { x: 50, y: 100 }, { x: 100, y: 100 }, { x: 150, y: 100 },
-
             { x: 0,  y: 150 }, { x: 50, y: 150 }, { x: 100, y: 150 }, { x: 150, y: 150 }
         ],
         NUMBERS_MOVE: {
@@ -31,6 +38,10 @@
             LEFT: -1
         }
     };
+
+    App.Options = {
+        debugClient: true
+    }
 
     App.State = {
         player: '',
@@ -51,7 +62,7 @@
     }
 
     window.d = function(what) {
-        if (App.Config.DEBUG) {
+        if (App.Options.debugClient) {
             if (console && console.log) {
                 console.log(what);
             }
@@ -133,8 +144,8 @@
             var curPos = model.position;
 
             this.$el.animate({
-                'left': App.Config.MAP_AREA[curPos].x,
-                'top': App.Config.MAP_AREA[curPos].y
+                'left': App.Constants.MAP_AREA[curPos].x,
+                'top': App.Constants.MAP_AREA[curPos].y
             }, {
                 duration: 280,
                 queue: false,
@@ -148,14 +159,14 @@
             'click': 'tryToMoveOneCell'
         },
         tryToMoveOneCell: function() {
-            var curModel = this.model;
-            var curPos = curModel.attributes.position;
-            var curNumber = curModel.attributes.number;
-            var nextStep;
-            var canBeMoved = canBeMovedChecker();
-            var oneCellIsMovable = false;
+            var curModel = this.model,
+                curPos = curModel.attributes.position,
+                curNumber = curModel.attributes.number,
+                nextStep,
+                canBeMoved = canBeMovedChecker(),
+                oneCellIsMovable = false;
 
-            _.each(App.Config.NUMBERS_MOVE, function(directionNumber) {
+            _.each(App.Constants.NUMBERS_MOVE, function(directionNumber) {
                 nextStep = curPos + directionNumber;
 
                 if (App.State.map[nextStep] == 0 && canBeMoved) {
@@ -209,8 +220,9 @@
             var canBeMovedComplex;
 
             d('Trying COMPLEX moving..');
+            App.Socket.emit('complex moving', 1);
 
-            _.each(App.Config.NUMBERS_MOVE, function(directionNumber) {
+            _.each(App.Constants.NUMBERS_MOVE, function(directionNumber) {
                 closestCellPos = curPos + directionNumber;
 
                 // click second cell from empty
@@ -394,7 +406,7 @@
         App.State.player = player;
 
         //populate with cell items
-        for (i=1; i <= App.Config.MAX_CELLS; i++) {
+        for (i=1; i <= App.Constants.MAX_CELLS; i++) {
             cellCurrent = new App.Models.Cell({
                 number: i,
                 position: App.Utils.getNumberPosition(i)
@@ -554,12 +566,4 @@
             }
         }
     };
-
-
-    // Start Backbone
-    /************/
-    new App.Router;
-    Backbone.history.start();
-
 })();
-
