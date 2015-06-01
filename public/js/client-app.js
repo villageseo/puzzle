@@ -8,19 +8,17 @@
             // Start Client Logic
             $.extend(App.Options, options);
             App.Socket = io();
-
-            new App.Router;
-            Backbone.history.start();
+            App.Router.init();
         },
         Models: {},
         Collections: {},
         Views: {},
-        Router: {},
-        Constants: {},
+        Router: {}, // client routing
+        Constants: {}, // game constants
         State: {},
-        Utils: {},
-        Socket: {},
-        Options: {}
+        Utils: {},  // some Utils & logic functions
+        Socket: {}, // socket.io
+        Options: {} // options can be passed to App object
     };
 
     App.Constants = {
@@ -43,18 +41,7 @@
         debugClient: true
     }
 
-    App.State = {
-        player: '',
-        isEnd: false,
-        // 0 - empty, 1 - has cell
-        map: [
-            1,  1,  1,  1,
-            1,  1,  1,  1,
-            1,  1,  1,  1,
-            1,  1,  1,  0
-        ],
-        newMap: []
-    };
+    App.State = {}; // will be populated in App.Router.init
 
     //some useful global functions
     window.template = function(id) {
@@ -106,6 +93,7 @@
         addCell: function(cell) {
             var cellView = new App.Views.Cell({model: cell});
             this.$el.append(cellView.render().el);
+            App.Utils._updateClientAppState();
         },
         checkWin: function() {
             var isEnd = true;
@@ -126,13 +114,13 @@
                 App.State.isEnd = isEnd;
                 window.location.hash = '#finish';
             }
+            App.Utils._updateClientAppState();
         }
     });
 
     App.Views.Cell = Backbone.View.extend({
         initialize: function() {
             this.model.on("change", this.render, this);
-            //this.model.on("destroy", this.remove, this);
         },
         tagName: 'div',
         className: 'puzzle__item',
@@ -211,6 +199,9 @@
             if (oneCellIsMovable == false) {
                 this.tryToMoveComplex(curModel);
             }
+
+            // Update client state
+            App.Utils._updateClientAppState();
         },
         tryToMoveComplex: function(curModel) {
             var curPos = curModel.attributes.position;
@@ -220,7 +211,6 @@
             var canBeMovedComplex;
 
             d('Trying COMPLEX moving..');
-            App.Socket.emit('complex moving', 1);
 
             _.each(App.Constants.NUMBERS_MOVE, function(directionNumber) {
                 closestCellPos = curPos + directionNumber;
@@ -241,6 +231,7 @@
                     if ((closestCellPos + directionNumber == nullCellPos)) {
                         canBeMovedComplex = canBeMovedComplexChecker(directionNumber, false);
 
+                        // ToDo: Bad logic (must be refactored)
                         if (canBeMovedComplex) {
                             $('.puzzle__item__cell[data-position='+closestCellPos+']').trigger('click');
                             $('.puzzle__item__cell[data-position='+nearestCellPos+']').trigger('click');
@@ -254,14 +245,14 @@
                 var wall = [0, 3, 4, 7, 8, 11, 12, 15];
                 var currentStep = currentStep ? 'step2' : 'step3';
 
-                d('-----------Номер движения: '+directionNumber+'---------------');
-                d('Позиция curPos: '+curPos);
-                d('Позиция nearest: '+nearestCellPos);
-                d('Позиция closest: '+closestCellPos);
-                d('Позиция null: '+nullCellPos);
-                d('Шаг: '+currentStep);
+                d('-----------Direction Number: '+directionNumber+'---------------');
+                d('curPos: '+curPos);
+                d('Position nearest: '+nearestCellPos);
+                d('Position closest: '+closestCellPos);
+                d('Position null: '+nullCellPos);
+                d('Step: '+currentStep);
 
-                // Exceptions when try complex moving..
+                // Forbidden movings
                 switch (currentStep) {
                     case 'step2':
                         if ((_.indexOf(wall, closestCellPos) != -1) && (_.indexOf(wall, curPos) == -1)) {
@@ -290,6 +281,8 @@
                 }
                 return true;
             }
+
+            App.Utils._updateClientAppState();
         }
     });
 
@@ -302,6 +295,7 @@
         render: function() {
             var model = this.model.attributes;
             this.$el.html(this.template(model));
+            App.Utils._updateClientAppState();
         }
     });
 
@@ -314,23 +308,72 @@
         render: function() {
             var model = this.model.attributes;
             this.$el.html(this.template(model));
+            App.Utils._updateClientAppState();
         }
     });
 
-    // ROUTERS
+    // ROUTER
     /************/
-    App.Router = Backbone.Router.extend({
-        routes: {
-            '': 'index',
-            'start': 'start',
-            finish: 'finish'
-        },
-        index: function() {
-            var wrap = $('#puzzle-wrap');
-            var indexTemplate = template('template-index-page');
-            var hud = $('#puzzle-hud');
+    App.Router = {
+        init: function() {
+            var self = this;
 
-            d('Index route..');
+            // Listen server state
+            App.Socket.on('server-app-state', function(globalData) {
+                d(globalData);
+
+                if (globalData.client.map === undefined) {
+                   d('Popuplating with default data...');
+                    App.State = {
+                        linkStartIsClicked: false,
+                        player: '',
+                        isEnd: false,
+                        // 0 - empty, 1 - has cell
+                        map: [
+                            1,  1,  1,  1,
+                            1,  1,  1,  1,
+                            1,  1,  1,  1,
+                            1,  1,  1,  0
+                        ],
+                        newMap: [],
+                        backboneObj: {}
+                    }
+
+                } else {
+                    App.State = globalData.client;
+                    console.log(globalData.client);
+                    d('Set App.State with global data...');
+                }
+
+                switch (globalData.server.currentRoute) {
+                    case 'index':
+                        self.index();
+                        // Update client state
+                        App.Utils._updateClientAppState();
+                        break;
+
+                    case 'start':
+                        if (globalData.server.totalUsers == 1) {
+                            self.start(false);
+                        } else {
+                            self.start(true);
+                        }
+                        break;
+
+                    case 'finish':
+                        self.finish();
+                        break;
+                }
+
+            });
+        },
+
+        index: function() {
+            var wrap = $('#puzzle-wrap'),
+                indexTemplate = template('template-index-page'),
+                hud = $('#puzzle-hud'),
+                startLink,
+                self = this;
 
             hud.slideUp({
                 duration: 500,
@@ -343,35 +386,45 @@
                 easing: 'easeOutBounce',
                 queue: false
             });
+
             wrap.html(indexTemplate);
             App.Utils.timer.end();
+
+            startLink = $('#puzzle-start-link');
+
+            startLink.on('click', function() {
+                App.State.linkStartIsClicked = true;
+                App.Utils._updateClientAppState();
+            })
         },
-        start: function() {
+
+        start: function(started) {
             var wrap = $('#puzzle-wrap');
             var hud = $('#puzzle-hud');
 			var timerHud = $('#puzzle-hud-timer-inner');
-
             var startTemplate = template('template-puzzle-container');
 
-            d('Start route..');
-			wrap.fadeIn(1000);
-            wrap.html(startTemplate);
+            wrap
+                .fadeIn(1000)
+                .html(startTemplate);
+
             App.Utils.timer.makeTimerNull();
-			timerHud.hide();
+            timerHud.hide();
 
             $('#puzzle-container').slideDown({
                 duration: 1500,
                 done: function() {
-					App.Utils.timer.start();
-					timerHud.show();
+                    App.Utils.timer.start();
+                    timerHud.show();
                     hud.fadeIn({
                         duration: 1200
                     });
-                    App.State.init();
+                    App.bootstrap(started);
                 },
                 queue: false
             })
         },
+
         finish: function() {
             var wrap = $('#puzzle-wrap');
             var endTemplate = template('template-ending');
@@ -386,50 +439,55 @@
             d('The end..');
             App.Utils.timer.end();
         }
-    });
+    };
 
-
-    // Init function
-    /************/
-    App.State.init = function() {
+    // App bootstrap
+    App.bootstrap = function(started) {
+        var started = started || false;
         var cellCurrent;
         var cellsArray = [];
-
-        var CellCollection = new App.Collections.Cell();
         var i;
 
-        // generate new puzzle
-        App.State.newMap = App.Utils.generateNewMap();
+        // New game
+        if (started == false) {
+            App.State.newMap = App.Utils.generateNewMap();
+            App.State.backboneObj.CellCollection = new App.Collections.Cell();
 
-        // create player
-        var player = new App.Models.Player();
-        App.State.player = player;
+            // create player
+            App.State.player = new App.Models.Player();
 
-        //populate with cell items
-        for (i=1; i <= App.Constants.MAX_CELLS; i++) {
-            cellCurrent = new App.Models.Cell({
-                number: i,
-                position: App.Utils.getNumberPosition(i)
+            //populate with cell items
+            for (i=1; i <= App.Constants.MAX_CELLS; i++) {
+                cellCurrent = new App.Models.Cell({
+                    number: i,
+                    position: App.Utils.getNumberPosition(i)
+                });
+                cellsArray.push(cellCurrent);
+            }
+
+            App.State.backboneObj.cellCollectionView = new App.Views.CellCollection({
+                collection : App.State.backboneObj.CellCollection,
+                el : $('#puzzle-container')[0]
             });
-            cellsArray.push(cellCurrent);
+
+            App.State.backboneObj.CellCollection.add(cellsArray);
+
+            App.State.backboneObj.playerStepsView = new App.Views.PlayerSteps({
+                model: App.State.player,
+                el: $('#puzzle-hud-steps-inner')[0]
+            })
+
+            App.State.backboneObj.playerPointsView = new App.Views.PlayerPoints({
+                model: App.State.player,
+                el: $('#puzzle-hud-points-inner')[0]
+            })
+        } else {
+
+
         }
 
-        var cellCollectionView = new App.Views.CellCollection({
-            collection : CellCollection,
-            el : $('#puzzle-container')[0]
-        });
-        CellCollection.add(cellsArray);
-
-        var playerStepsView = new App.Views.PlayerSteps({
-            model: player,
-            el: $('#puzzle-hud-steps-inner')[0]
-        })
-
-        var playerPointsView = new App.Views.PlayerPoints({
-            model: player,
-            el: $('#puzzle-hud-points-inner')[0]
-        })
-
+        // Update client state
+        App.Utils._updateClientAppState();
     };
 
     App.Utils = {
@@ -456,6 +514,7 @@
 
             return arrayMap;
         },
+
         isSolvable: function(arrayMap) {
             var totalSum = 0;
             var currentNumSum;
@@ -483,6 +542,7 @@
             }
             return false;
         },
+
         getNumberPosition: function(number) {
             if (number > 0 ) {
                 return _.indexOf(App.State.newMap, number);
@@ -490,6 +550,12 @@
                 throw new Error("Число должно быть больше 1!");
             }
         },
+
+        _updateClientAppState: function() {
+            App.Socket.emit('client-app-state', App.State);
+        },
+
+        // Pretty simple timer :)
         timer: {
             intervalID: 0,
             template: template('template-timer'),
@@ -522,7 +588,7 @@
                     seconds.left++;
                 }
 
-                // Update to minute
+                // Update minutes
                 if (seconds.left == 6) {
                     seconds.left = 0;
                     seconds.right = 0;
@@ -535,7 +601,7 @@
                     }
                 }
 
-                // Update to hour
+                // Update hours
                 if (minutes.left == 6) {
                     minutes.left = 0;
                     minutes.right = 0;

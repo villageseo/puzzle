@@ -53,7 +53,7 @@
 
     <script id="template-index-page" type="text/template">
         <div class="puzzle-wrap__index">
-            <a class="puzzle__start-link" href="#start">
+            <a class="puzzle__start-link" href="javascript:void(0);" id="puzzle-start-link">
                 <span>Click to start</span>
                 <img src="images/fallout_guy_approved.png" alt="#" />
             </a>
@@ -93,7 +93,7 @@
     <script src="js/client-app.js"></script>
     <script>
         App.init({
-            debug: false
+            debug: true
         });
     </script>
 </body>
