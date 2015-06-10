@@ -26,6 +26,7 @@ app
     });
 
 io.on('connection', function(socket) {
+    console.log('user connected');
 
     if (!globalData.server.initGame) {
         globalData.server.initGame = true;
@@ -33,41 +34,35 @@ io.on('connection', function(socket) {
 
     // Players Connected
     globalData.server.totalUsers++;
-    _updateServerAppState();
+    _updateServerData();
 
     // Players Disconnected
     socket.on('disconnect', function() {
         globalData.server.totalUsers--;
-        _updateServerAppState();
+        _updateServerData();
 
     });
 
     // Listen Client app state
-    socket.on('client-app-state', function(data) {
-        globalData.client = data;
-
-        if (globalData.client.linkStartIsClicked && globalData.server.currentRoute != globalData.server.routes[1]) {
-            globalData.server.currentRoute = globalData.server.routes[1];
-            _updateServerAppState();
+    socket.on('client-app-data', function(clientData) {
+        for (var key in clientData) {
+            globalData.client[key] = clientData[key];
         }
-
-        console.log('<---- Data Client: ----->');
-        console.log(globalData.client);
-        console.log('</--------->');
+        _showServerData();
     })
-
 });
 
-function _updateServerAppState() {
-    io.emit('server-app-state', globalData);
+function _updateServerData() {
+    io.emit('server-app-data', globalData);
+}
 
-    console.log('<---- Data Server: ----->');
-    console.log(globalData.server);
-    console.log('</--------->');
+function _showServerData() {
+    console.log('/*************/');
+    console.log(globalData);
+    console.log('/*************/');
 }
 
 // Go go server!
 http.listen(3000, function(){
     console.log('listening on *:3000');
 });
-

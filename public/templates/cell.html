@@ -1,0 +1,5 @@
+<% if (isCorrect) {%>
+    <div class="puzzle__item__cell puzzle__item__cell--correct" data-position="<%= position %>"><%= number %></div>
+<% } else { %>
+    <div class="puzzle__item__cell" data-position="<%= position %>"><%= number %></div>
+<% }%>

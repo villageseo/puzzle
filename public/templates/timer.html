@@ -1,0 +1,7 @@
+<% _.each(items, function(item) { %>
+    <b class="timer-sep">:</b>
+    <div data-type="<%= item.type %>" class="timer-col">
+        <span><%= item.left %></span>
+        <span><%= item.right %></span>
+    </div>
+<% })%>
