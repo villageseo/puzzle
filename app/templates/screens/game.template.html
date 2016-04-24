@@ -1,4 +1,12 @@
 <div class="puzzle-wrap__start">
     <h3>15 Puzzle</h3>
-    <div id="puzzle-container" class="puzzle unselectable"></div>
+    <div id="puzzle-container" class="puzzle unselectable">
+        <div class="puzzle__item"
+             *ngFor="#mapItem of map; #i = index"
+             [ngStyle]="{'left': mapItem.x, 'top' : mapItem.y}">
+            <div class="puzzle__item__cell">
+                {{cells[i].number}}
+            </div>
+        </div>
+    </div>
 </div>

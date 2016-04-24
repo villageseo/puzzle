@@ -67,7 +67,7 @@ body {
     text-shadow: 1px 1px 1px rgba(54, 54, 54, 1);
 }
 .puzzle {
-    display: none;
+    /*display: none;*/
     position: relative;
     width: 200px;
     height: 200px;

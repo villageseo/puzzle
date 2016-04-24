@@ -5,9 +5,14 @@ import {BeginComponent} from './components/screens/begin/begin.component';
 import {GameComponent} from './components/screens/game/game.component';
 import {FinishComponent} from './components/screens/finish/finish.component';
 
+import {MapService} from './services/map.service';
+import {UtilService} from './services/util.service';
+import {CellService} from './services/cell.service';
+
 @Component({
     selector: 'my-app',
     templateUrl: '/app/templates/app.template.html',
+    providers: [MapService, UtilService, CellService],
     directives: [ROUTER_DIRECTIVES]
 })
 @RouteConfig([
