@@ -11,12 +11,13 @@ import {Cell, CellService} from './../../../services/cell.service';
     templateUrl: '/app/templates/screens/game.template.html'
 })
 export class GameComponent implements OnInit {
+    mapMatrix = [];
     mapArea: MapEntity[];
+
     cells: Cell[];
     player: Player;
-    endGame: boolean;
 
-    _mapMatrix = [];
+    endGame: boolean;
 
     constructor(
         private _mapService: MapService,
@@ -33,7 +34,7 @@ export class GameComponent implements OnInit {
         this._mapService.getMap()
             .then(function(map) {
                 self.mapArea = map.area;
-                self._mapMatrix = map.matrix;
+                self.mapMatrix = map.matrix;
             });
 
         // Create cells
@@ -49,10 +50,12 @@ export class GameComponent implements OnInit {
             oneCellIsMovable = false,
             self = this;
 
-        for (var directionNumber in AppSettings.KEYBOARD) {
-            nextStep = item.position + AppSettings.KEYBOARD[directionNumber];
+        console.log('tryToMoveOneCell');
 
-            if (self._mapMatrix[nextStep] === 0) {
+        for (var direction in AppSettings.DIRECTIONS) {
+            nextStep = item.position + AppSettings.DIRECTIONS[direction];
+
+            if (self.mapMatrix[nextStep] === 0) {
                 updatePositions();
 
                 self.updatePlayerPoints();
@@ -64,8 +67,8 @@ export class GameComponent implements OnInit {
         function updatePositions() {
             oneCellIsMovable = true;
 
-            self._mapMatrix[nextStep] = 1;
-            self._mapMatrix[item.position] = 0;
+            self.mapMatrix[nextStep] = 1;
+            self.mapMatrix[item.position] = 0;
 
             item.position = nextStep;
 
@@ -77,9 +80,51 @@ export class GameComponent implements OnInit {
         }
 
         /* Try complex moving */
-        //if (!oneCellIsMovable) {
-        //    this.tryToMoveComplex(item);
-        //}
+        if (!oneCellIsMovable) {
+            this.tryToMoveComplex(item);
+        }
+    }
+
+    tryToMoveComplex(item) {
+        var zeroPosition,
+            lastPos,
+            maxDepth = 3,
+            curDepth,
+            cellsToMove = [];
+
+        for (var direction in AppSettings.DIRECTIONS) {
+            if (direction === 'bottom') {
+                //zeroPosition = this.getZeroPosition();
+                //
+                //lastPos = item.position + (maxDepth*AppSettings.DIRECTIONS[direction]);
+                //
+                //for (curDepth = 1; curDepth <= maxDepth; curDepth++) {
+                //    lastPos -= AppSettings.DIRECTIONS[direction];
+                //    cellsToMove.push(this.getCellByPosition(lastPos));
+                //
+                //    console.log('curDepth: ' + curDepth);
+                //    console.log(lastPos);
+                //}
+                //
+                //console.log(cellsToMove);
+            }
+        }
+    }
+
+    getCellByPosition(position) {
+        let cell:any = false;
+
+        this.cells.forEach(function(item) {
+           if (item.position == position) {
+               cell = item;
+           }
+        });
+
+        return cell;
+    }
+
+    getZeroPosition() {
+        return this.mapMatrix.indexOf(0);
     }
 
     updatePlayerPoints() {

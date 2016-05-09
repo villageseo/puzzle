@@ -1,5 +1,5 @@
 export class AppSettings {
-    public static KEYBOARD = {
+    public static DIRECTIONS = {
         top: -4,
         right: 1,
         bottom: 4,
