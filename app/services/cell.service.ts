@@ -1,4 +1,5 @@
 import {Injectable} from 'angular2/core';
+import {UtilService} from './util.service';
 
 export class Cell {
     constructor(
@@ -9,24 +10,68 @@ export class Cell {
 
 @Injectable()
 export class CellService {
-    getCells(data) {
-        var curIndex = 0;
-        var self = this;
+    constructor(private _utils: UtilService) { }
 
-        var CELLS = new Array(15).join('-').split('-').map(function(item, index) {
-            curIndex = ++index;
-            return new Cell(curIndex, self.getNumberPosition(curIndex, data), false);
+    generatePuzzle() {
+        let arrayMap = Array.from(Array(16).keys()),
+        firstElem,
+        lastElem;
+
+        arrayMap.shift();
+        arrayMap = this._utils.shuffle(arrayMap);
+
+        if (this.isSolvable(arrayMap) == false) {
+            // just swap positions of first and last element
+            firstElem = arrayMap[0];
+            lastElem = arrayMap[arrayMap.length-1];
+            arrayMap[0] = lastElem;
+            arrayMap[arrayMap.length-1] = firstElem;
+
+            console.log('Not solvable, swap positions.. DONE.');
+        }
+
+        return arrayMap;
+    }
+
+    isSolvable(data) {
+        let totalSum = 0,
+            currentNumSum,
+            tempArray = [],
+            self = this;
+
+        data.forEach(function(num) {
+            currentNumSum = 0;
+            tempArray.push(num);
+            self._utils.difference(data, tempArray).forEach(function(innerNum) {
+                if (num > innerNum) {
+                    currentNumSum++;
+                }
+            });
+            totalSum+=currentNumSum;
         });
-        console.log(CELLS);
-        return Promise.resolve(CELLS);
+
+        if (totalSum%2 === 0) {
+            console.log('Solvable! Perfect!');
+            return true;
+        }
+        return false;
     }
 
-    tryToMoveOneCell() {
-        console.log('tryToMoveOneCell');
+    getCells(data) {
+        let curIndex = 0,
+            self = this,
+            itemPosition;
+
+        let cells = new Array(15).join('-').split('-').map(function(item, index) {
+            curIndex = ++index;
+            itemPosition = self.getNumberPosition(curIndex, data);
+            return new Cell(curIndex, itemPosition, self.isCorrectPos((curIndex - 1), itemPosition));
+        });
+        return Promise.resolve(cells);
     }
 
-    tryToMoveComplex() {
-        console.log('tryToMoveComplex');
+    isCorrectPos(index, position) {
+        return index === position;
     }
 
     getNumberPosition(index, data) {

@@ -2,10 +2,36 @@
     <h3>15 Puzzle</h3>
     <div id="puzzle-container" class="puzzle unselectable">
         <div class="puzzle__item"
-             *ngFor="#mapItem of map; #i = index"
-             [ngStyle]="{'left': mapItem.x, 'top' : mapItem.y}">
-            <div class="puzzle__item__cell">
-                {{cells[i].number}}
+             (click)="tryToMoveOneCell(cellItem)"
+             *ngFor="#cellItem of cells; #i = index"
+             [ngStyle]="{'left': mapArea[cellItem.position].x, 'top' : mapArea[cellItem.position].y}">
+            <div class="puzzle__item__cell"
+                 [attr.data-position]="cellItem.position"
+                 [ngClass]="{'puzzle__item__cell--correct': cellItem.isCorrect}">
+                {{cellItem.number}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="puzzle-hud" class="puzzle-hud">
+    <div id="puzzle-hud-inner" class="puzzle-hud__inner">
+        <div class="puzzle-hud__timer">
+            <h3>Time</h3>
+            <div id="puzzle-hud-timer-inner" class="puzzle-hud__timer__inner"></div>
+        </div>
+        <div class="puzzle-hud__player">
+            <div class="puzzle-hud__player__points">
+                <h3>Points:</h3>
+                <div id="puzzle-hud-points-inner" class="puzzle-hud__player__content">
+                    {{player.points}}
+                </div>
+            </div>
+            <div class="puzzle-hud__player__steps">
+                <h3>Steps:</h3>
+                <div id="puzzle-hud-steps-inner" class="puzzle-hud__player__content">
+                    {{player.steps}}
+                </div>
             </div>
         </div>
     </div>
